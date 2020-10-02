@@ -28,6 +28,16 @@ Provides primitives for sessions and session storage. The default implementation
 
 Usage and examples can be found in the crate subfolder.
 
+## Goals
+
+- Provide robust extensions for basic web framework functionality
+- Integrate tightly into the Rocket ecosystem
+- Where possible, support other Rocket frameworks
+
+## Antigoals
+
+- Cover _all_ frameworks
+
 ## Contributing
 
 TODO
