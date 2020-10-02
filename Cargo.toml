@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "rocket_authentication",
+    "rocket_authorization",
+    "rocket_session",
+]
