@@ -1,47 +1,54 @@
-# Rocket Extensions
+# Turbopump
 
-## About
+Primitives for stateful sessions in Rocket. Providing multiple drivers:
 
-A set of crates that can be used with the Rocket web framework for various purposes.
+- Cookie
+- Database
+- Cache (i.e. Redis, etc)
+- In-Memory
 
-Currently, the following crates are provided:
+### What belongs in the session store?
 
-- Authentication
-- Authorization
+- Checking for auth? No. Auth is separate and tied to the session data, but not part of the actual session management.
+- Reading and writing the session source? Yes.
+- What belongs in the session store?
+  - A unique identifier
+  - Plain data
+- Session operations
+  - Start (implicit - onResponse?)
+  - Read (implicit - RequestGuard)
+  - Destroy (explicit? destroy entire cookie and all references to session)
+  - Clear (clear the data in the cookie)
+
+### Blueprint
+
+- SessionFairing
+  - Actual piece that's attached to the Rocket instance
+  - on_attach -> store a `SessionHandler<S: SessionStore>` instance in Rocket's shared state
+  - on_response -> set the session cookie if it hasn't been set yet
+- SessionStore
+  - Stores the actual session data (or proxies it to another store, i.e. Database, etc)
+  - Basic session operations
+    - load
+    - store
+    - clear
+    - destroy
 - Session
 
-### Authentication
+  - Actual type with a FromRequest impl
+  - Contains the data stored by the handler
+  - ```rust
+      #[derive(Serialize, Deserialize)]
+      struct Session {
+        session_id: SessionId,
+        data: HashMap<String, String>
+      }
 
-Provides primitives for authentication, including framework tooling for registration and password resets.
+      impl FromRequest for Session {...}
 
-Usage can be found in the crate subfolder.
+      impl Default for Session {...}
+    ```
 
-### Authorization
+### Supported versions
 
-Provides primitives and frameworks for authorization. Create policies and access control lists to limit access in your applications.
-
-Usage can be found in the crate subfolder.
-
-### Session
-
-Provides primitives for sessions and session storage. The default implementation is designed for cookie-based sessions, but examples, docs, and drivers for database and filesystem drivers are provided, as well.
-
-Usage and examples can be found in the crate subfolder.
-
-## Goals
-
-- Provide robust extensions for basic web framework functionality
-- Integrate tightly into the Rocket ecosystem
-- Where possible, support other Rocket frameworks
-
-## Antigoals
-
-- Cover _all_ frameworks
-
-## Contributing
-
-TODO
-
-## License
-
-MIT - TODO: Add this to the repo
+- Rocket 0.5 and beyond - async only

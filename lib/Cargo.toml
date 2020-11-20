@@ -1,0 +1,43 @@
+[package]
+name = "turbopump"
+version = "0.1.0"
+authors = ["Eric Dattore <eric@dattore.me>"]
+edition = "2018"
+keywords = [
+    "rocket",
+    "web",
+    "cookies",
+    "session",
+    "database",
+    "filesystem",
+    "rust",
+]
+
+[lib]
+name = "turbopump"
+path = "src/lib.rs"
+
+[features]
+default = ["private"]
+cookie = []
+database = []
+cache = []
+private = ["rocket/secrets"]
+nightly = []
+
+[dependencies]
+async-trait = "0.1"
+anyhow = "1.0"
+thiserror = "1.0"
+serde = { version = "1.0", features = ["rc", "derive"] }
+serde_json = "1.0"
+rand = "0.8"
+flurry = { version = "0.3", features = ["serde"] }
+
+[dependencies.rocket]
+git = "https://github.com/SergioBenitez/Rocket"
+branch = "master"
+features = ["secrets"]
+
+[dev-dependencies]
+figment = { version = "0.10", features = ["toml"] }

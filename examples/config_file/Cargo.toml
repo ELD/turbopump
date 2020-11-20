@@ -1,5 +1,5 @@
 [package]
-name = "rocket_session"
+name = "config_file"
 version = "0.1.0"
 authors = ["Eric Dattore <eric@dattore.me>"]
 edition = "2018"
