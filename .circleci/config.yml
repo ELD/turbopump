@@ -9,10 +9,12 @@ jobs:
   lint:
     executor: rust-exec
     steps:
+      - checkout
       - run: cargo clippy -- -Drust-2018-idioms
   test:
     executor: rust-exec
     steps:
+      - checkout
       - run: cargo test
 
 workflows:
