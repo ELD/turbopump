@@ -3,7 +3,7 @@ version: 2.1
 executors:
   rust-exec:
     docker:
-      - image: circleci/rust:1.48.0
+      - image: cimg/rust:1.48.0
 
 jobs:
   lint:
