@@ -1,0 +1,22 @@
+version: 2.1
+
+executors:
+  rust-exec:
+    docker:
+      - image: circleci/rust:1.48.0
+
+jobs:
+  lint:
+    executor: rust-exec
+    steps:
+      - run: cargo clippy -- -Drust-2018-idioms
+  test:
+    executor: rust-exec
+    steps:
+      - run: cargo test
+
+workflows:
+  lint_and_test:
+    jobs:
+      - lint
+      - test
