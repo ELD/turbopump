@@ -1,77 +1,133 @@
-use rocket::http::SameSite as RSameSite;
-use serde::{
-    de::{self, Deserialize as DeserializeTrait, Visitor},
-    Deserialize,
-};
-use std::fmt;
+use std::borrow::Cow;
 
-#[derive(Clone, Debug, PartialEq)]
+use rocket::http::SameSite as RSameSite;
+use serde::Deserialize;
+
+#[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename = "same_site", rename_all = "lowercase")]
 pub enum SameSite {
     Strict,
     Lax,
     None,
 }
 
-impl Into<RSameSite> for SameSite {
-    fn into(self) -> RSameSite {
-        match self {
-            Self::Strict => RSameSite::Strict,
-            Self::Lax => RSameSite::Lax,
-            Self::None => RSameSite::None,
+impl From<SameSite> for RSameSite {
+    fn from(into: SameSite) -> Self {
+        match into {
+            SameSite::Strict => Self::Strict,
+            SameSite::Lax => Self::Lax,
+            SameSite::None => Self::None,
         }
-    }
-}
-
-impl<'de> DeserializeTrait<'de> for SameSite {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        struct SameSiteVisitor;
-
-        impl<'de> Visitor<'de> for SameSiteVisitor {
-            type Value = SameSite;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-                formatter.write_str("`Strict`, `Lax`, or `None`")
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<SameSite, E>
-            where
-                E: de::Error,
-            {
-                match value.to_lowercase().as_ref() {
-                    "strict" => Ok(SameSite::Strict),
-                    "lax" => Ok(SameSite::Lax),
-                    "none" => Ok(SameSite::None),
-                    _ => Err(de::Error::unknown_field(value, &["strict", "lax", "none"])),
-                }
-            }
-        }
-
-        deserializer.deserialize_str(SameSiteVisitor)
     }
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct SessionConfig {
-    pub max_age: i32,
-    pub domain: Option<String>,
-    pub path: Option<String>,
-    pub same_site: SameSite,
-    pub http_only: bool,
+    pub(crate) max_age: i64,
+    pub(crate) domain: Option<Cow<'static, str>>,
+    pub(crate) path: Option<Cow<'static, str>>,
+    pub(crate) same_site: SameSite,
+    pub(crate) http_only: bool,
+    pub(crate) lottery: f64,
 }
 
-impl SessionConfig {}
+impl SessionConfig {
+    pub fn builder() -> SessionConfigBuilder {
+        SessionConfigBuilder::default()
+    }
+
+    pub fn max_age(&self) -> i64 {
+        self.max_age
+    }
+
+    pub fn domain(&self) -> Option<&str> {
+        self.domain.as_ref().map(|inner| inner.as_ref())
+    }
+
+    pub fn path(&self) -> Option<&str> {
+        self.path.as_ref().map(|inner| inner.as_ref())
+    }
+
+    pub fn same_site(&self) -> SameSite {
+        self.same_site
+    }
+
+    pub fn http_only(&self) -> bool {
+        self.http_only
+    }
+
+    pub fn lottery(&self) -> f64 {
+        self.lottery
+    }
+}
 
 impl Default for SessionConfig {
+    fn default() -> Self {
+        SessionConfigBuilder::default().finish()
+    }
+}
+
+pub struct SessionConfigBuilder {
+    max_age: i64,
+    domain: Option<&'static str>,
+    path: Option<&'static str>,
+    same_site: SameSite,
+    http_only: bool,
+    lottery: f64,
+}
+
+impl SessionConfigBuilder {
+    pub fn max_age(self, max_age: i64) -> Self {
+        Self { max_age, ..self }
+    }
+
+    pub fn domain(self, domain: &'static str) -> Self {
+        Self {
+            domain: Some(domain),
+            ..self
+        }
+    }
+
+    pub fn path(self, path: &'static str) -> Self {
+        Self {
+            path: Some(path),
+            ..self
+        }
+    }
+
+    pub fn same_site(self, same_site: SameSite) -> Self {
+        Self { same_site, ..self }
+    }
+
+    pub fn http_only(self, http_only: bool) -> Self {
+        Self { http_only, ..self }
+    }
+
+    pub fn lottery(self, lottery: f64) -> Self {
+        Self { lottery, ..self }
+    }
+
+    pub fn finish(self) -> SessionConfig {
+        SessionConfig {
+            max_age: self.max_age,
+            domain: self.domain.map(|inner| inner.into()),
+            path: self.path.map(|inner| inner.into()),
+            same_site: self.same_site,
+            http_only: self.http_only,
+            lottery: self.lottery,
+        }
+    }
+}
+
+impl Default for SessionConfigBuilder {
     fn default() -> Self {
         Self {
             max_age: 3600,
             domain: None,
-            path: Some("/".to_string()),
-            same_site: SameSite::None,
-            http_only: false,
+            path: Some("/"),
+            same_site: SameSite::Lax,
+            http_only: true,
+            lottery: 0.1,
         }
     }
 }
@@ -93,14 +149,16 @@ mod test {
             path = "/"
             same_site = "lax"
             http_only = true
+            lottery = 0.1
         "#;
 
         let expected_config = SessionConfig {
             max_age: 3600,
-            domain: Some("example.local".to_string()),
-            path: Some("/".to_string()),
+            domain: Some("example.local".into()),
+            path: Some("/".into()),
             same_site: SameSite::Lax,
             http_only: true,
+            lottery: 0.1,
         };
 
         let figment = Figment::from(Toml::string(input));

@@ -1,9 +1,6 @@
 use rocket::{error::Error as RocketError, get, response::content::Html, routes};
 use turbopump::{
-    fairing::{
-        config::{SameSite, SessionConfig},
-        SessionFairing,
-    },
+    fairing::{config::SessionConfig, SessionFairing},
     store::in_memory::InMemory,
     Session,
 };
@@ -17,13 +14,7 @@ pub struct HitCounter {
 async fn main() -> Result<(), RocketError> {
     rocket::ignite()
         .attach(SessionFairing::<InMemory<HitCounter>>::with_config(
-            SessionConfig {
-                max_age: 3600,
-                domain: None,
-                path: Some("/".to_string()),
-                same_site: SameSite::Lax,
-                http_only: true,
-            },
+            SessionConfig::builder().finish(),
         ))
         .mount("/", routes![hit_counter, bare_route])
         .launch()

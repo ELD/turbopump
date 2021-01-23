@@ -1,3 +1,6 @@
+//! Core type for expressing sessions.
+
+use chrono::{DateTime, Duration, Utc};
 use rocket::{
     request::{FromRequest, Outcome},
     Request,
@@ -5,18 +8,23 @@ use rocket::{
 
 use std::sync::{Arc, RwLock};
 
-use crate::{util, CsrfToken, SessionID};
+use crate::{util, SessionId};
 
-#[derive(Debug, Default)]
+/// Type containing data for a given session.
+///
+/// The basic session type. It takes a generic `Data` type that is stored in
+/// the wrapper. This allows for a custom data structure to be used and
+/// manipulated in an ergonomic way via the [`Session::tap`] method.
+#[derive(Debug)]
 pub struct Session<Data>
 where
     Data: Clone + Default + Send + Sync + 'static,
 {
-    id: SessionID,
-    token: CsrfToken,
-    should_destroy: bool,
+    id: SessionId,
 
     inner_data: Arc<RwLock<Data>>,
+
+    expiration: DateTime<Utc>,
 }
 
 impl<Data> Clone for Session<Data>
@@ -26,10 +34,23 @@ where
     fn clone(&self) -> Self {
         Self {
             id: self.id.clone(),
-            token: self.token.clone(),
+
             inner_data: self.inner_data.clone(),
 
-            should_destroy: false,
+            expiration: self.expiration,
+        }
+    }
+}
+
+impl<Data> Default for Session<Data>
+where
+    Data: Clone + Default + Send + Sync + 'static,
+{
+    fn default() -> Self {
+        Self {
+            id: SessionId::default(),
+            inner_data: Arc::new(RwLock::new(Data::default())),
+            expiration: Utc::now(),
         }
     }
 }
@@ -38,36 +59,50 @@ impl<Data> Session<Data>
 where
     Data: Clone + Default + Send + Sync + 'static,
 {
-    pub fn new() -> Self {
+    pub fn new(lifespan: i64) -> Self {
         let id = util::random_string();
-        let token = util::random_string();
 
         Self {
-            id: SessionID(id),
-            token: CsrfToken(token),
+            id: SessionId(id),
             inner_data: Default::default(),
-            should_destroy: false,
+            expiration: Utc::now()
+                .checked_add_signed(Duration::seconds(lifespan))
+                .unwrap_or_else(Utc::now),
         }
     }
 
-    pub fn id(&self) -> &SessionID {
+    pub fn id(&self) -> &SessionId {
         &self.id
     }
 
-    pub fn csrf_token(&self) -> &CsrfToken {
-        &self.token
-    }
-
-    pub fn cookie_value(&self) -> (&str, &SessionID) {
+    pub fn cookie_value(&self) -> (&str, &SessionId) {
         ("session_id", self.id())
     }
 
-    pub fn token_value(&self) -> (&str, &CsrfToken) {
-        ("xsrf_token", self.csrf_token())
+    pub fn renew(&mut self, lifespan: i64) {
+        self.expiration = Utc::now()
+            .checked_add_signed(Duration::seconds(lifespan))
+            .unwrap_or_else(Utc::now)
     }
 
-    pub fn should_destroy(&self) -> bool {
-        self.should_destroy
+    pub fn expiration(&self) -> DateTime<Utc> {
+        self.expiration
+    }
+
+    pub fn expired(&self) -> bool {
+        self.expiration <= Utc::now()
+    }
+
+    pub fn is_valid(&self) -> bool {
+        !self.expired()
+    }
+
+    pub fn validate(self) -> Option<Self> {
+        if self.is_valid() {
+            Some(self)
+        } else {
+            None
+        }
     }
 
     pub fn tap<T>(&self, f: impl FnOnce(&mut Data) -> T) -> T {
@@ -83,12 +118,14 @@ where
     type Error = ();
 
     async fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
-        Outcome::Success(request.local_cache(Session::new))
+        Outcome::Success(request.local_cache(Session::default))
     }
 }
 
 #[cfg(test)]
 mod test {
+    use std::thread;
+
     use super::*;
 
     #[test]
@@ -108,5 +145,17 @@ mod test {
 
         assert_eq!(1, count);
         assert_eq!(1, session.inner_data.read().unwrap().count);
+    }
+
+    #[test]
+    fn sessions_expire() {
+        #[derive(Clone, Default)]
+        struct Data;
+        let session = Session::<Data>::new(1);
+        assert!(!session.expired());
+
+        thread::sleep(std::time::Duration::from_secs(1));
+
+        assert!(session.expired());
     }
 }

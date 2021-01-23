@@ -12,14 +12,15 @@ keywords = [
     "filesystem",
     "rust",
 ]
+license = "MIT"
 
 [lib]
 name = "turbopump"
 path = "src/lib.rs"
 
 [features]
-default = ["private"]
-cookie = []
+default = []
+cookie = ["private"]
 database = []
 cache = []
 private = ["rocket/secrets"]
@@ -30,9 +31,10 @@ async-trait = "0.1"
 anyhow = "1.0"
 thiserror = "1.0"
 serde = { version = "1.0", features = ["rc", "derive"] }
-serde_json = "1.0"
 rand = "0.8"
 flurry = { version = "0.3", features = ["serde"] }
+time = "0.2"
+chrono = "0.4"
 
 [dependencies.rocket]
 git = "https://github.com/SergioBenitez/Rocket"

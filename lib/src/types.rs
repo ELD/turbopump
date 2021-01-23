@@ -1,27 +1,31 @@
+//! Newtypes and traits for expressing components of sessions.
+
 use std::fmt::Display;
 
-use serde::{Deserialize, Serialize};
+/// Newtype for a Session ID
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SessionId(pub String);
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct CsrfToken(pub String);
+impl SessionId {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
 
-impl Display for CsrfToken {
+impl Display for SessionId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-#[derive(Clone, Debug, Default, Hash, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SessionID(pub String);
-
-impl Display for SessionID {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+impl From<&str> for SessionId {
+    fn from(s: &str) -> Self {
+        SessionId(s.into())
     }
 }
 
-impl Into<SessionID> for &str {
-    fn into(self) -> SessionID {
-        SessionID(self.to_string())
+impl From<SessionId> for String {
+    fn from(f: SessionId) -> Self {
+        f.0
     }
 }

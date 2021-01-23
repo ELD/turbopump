@@ -1,5 +1,9 @@
+//! Types for error handling.
+
 use thiserror::Error;
 
+/// SessionStoreError contains all the possible errors that can be returned
+/// from [crate::store::SessionStore] operations.
 #[derive(Error, Debug)]
 pub enum SessionStoreError {
     #[error("failed to load session, `{0}`")]
