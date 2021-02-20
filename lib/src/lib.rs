@@ -70,7 +70,6 @@
 //!
 //! For more details, check out the [`fairing::config::SessionConfig`] documentation.
 
-pub mod error;
 pub mod fairing;
 pub mod session;
 pub mod store;
@@ -79,6 +78,8 @@ mod util;
 
 #[doc(inline)]
 pub use crate::session::Session;
+#[doc(inline)]
+pub use crate::store::in_memory::InMemory;
 #[doc(inline)]
 pub use crate::store::SessionStore;
 #[doc(inline)]

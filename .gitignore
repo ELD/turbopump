@@ -1,5 +1,6 @@
 # Directories
 target/
+.vscode/
 
 # Files
 Cargo.lock

@@ -2,7 +2,11 @@ use anyhow::Result;
 use flurry::HashMap;
 use std::sync::Arc;
 
-use crate::{error::SessionStoreError, session::Session, store::SessionStore, SessionId};
+use crate::{
+    session::Session,
+    store::{error::SessionStoreError, SessionStore},
+    SessionId,
+};
 
 #[derive(Clone)]
 pub struct InMemory<Data>
@@ -51,9 +55,12 @@ where
 
     async fn destroy(&self, session_id: &SessionId) -> Result<()> {
         let sessions_ref = self.sessions.pin();
-        sessions_ref.remove(session_id).map(|_| ()).ok_or_else(|| {
-            SessionStoreError::DestroyFailure("unable to destroy session".to_string())
-        })?;
+        sessions_ref
+            .remove(session_id)
+            .map(|_| ())
+            .ok_or(SessionStoreError::DestroyFailure(
+                "unable to destroy session",
+            ))?;
 
         Ok(())
     }
