@@ -1,23 +1,19 @@
 use std::borrow::Cow;
 
-use rocket::http::SameSite as RSameSite;
-use serde::Deserialize;
+use rocket::http::SameSite;
+use serde::{de::Error, Deserialize, Deserializer};
 
-#[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
-#[serde(rename = "same_site", rename_all = "lowercase")]
-pub enum SameSite {
-    Strict,
-    Lax,
-    None,
-}
-
-impl From<SameSite> for RSameSite {
-    fn from(into: SameSite) -> Self {
-        match into {
-            SameSite::Strict => Self::Strict,
-            SameSite::Lax => Self::Lax,
-            SameSite::None => Self::None,
-        }
+pub(crate) fn deserialize_samesite<'de, D>(deserializer: D) -> Result<SameSite, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    match String::deserialize(deserializer)?.to_lowercase().as_ref() {
+        "lax" => Ok(SameSite::Lax),
+        "strict" => Ok(SameSite::Strict),
+        "none" => Ok(SameSite::None),
+        _ => Err(Error::custom(
+            "value was not one of: `lax`, `strict`, or `none`.",
+        )),
     }
 }
 
@@ -26,6 +22,7 @@ pub struct SessionConfig {
     pub(crate) max_age: i64,
     pub(crate) domain: Option<Cow<'static, str>>,
     pub(crate) path: Option<Cow<'static, str>>,
+    #[serde(deserialize_with = "deserialize_samesite")]
     pub(crate) same_site: SameSite,
     pub(crate) http_only: bool,
     pub(crate) lottery: f64,

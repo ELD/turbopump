@@ -34,7 +34,7 @@ pub(crate) fn make_cookie<'a, 'c>(
     let mut builder = Cookie::build(name.into(), value.into())
         .max_age(Duration::new(config.max_age, 0))
         .http_only(config.http_only)
-        .same_site(config.same_site.into());
+        .same_site(config.same_site);
 
     if let Some(domain) = &config.domain {
         builder = builder.domain(domain.to_owned());
@@ -52,7 +52,7 @@ mod test {
     use rocket::http::{private::cookie::Key, Cookie, SameSite};
     use time::Duration;
 
-    use crate::{fairing::config::SameSite as SSameSite, SessionId};
+    use crate::SessionId;
 
     use super::*;
 
@@ -92,7 +92,7 @@ mod test {
             max_age: 3600,
             domain: Some("example.local".into()),
             path: Some("/".into()),
-            same_site: SSameSite::Lax,
+            same_site: SameSite::Lax,
             http_only: true,
             lottery: 0.1,
         };
