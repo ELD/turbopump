@@ -1,8 +1,7 @@
 use rocket::{error::Error as RocketError, get, response::content::Html, routes};
 use turbopump::{
-    fairing::{config::SessionConfig, SessionFairing},
-    store::in_memory::InMemory,
-    Session,
+    fairing::{SessionConfig, SessionFairing},
+    InMemory, Session,
 };
 
 #[derive(Clone, Default)]

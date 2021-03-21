@@ -1,7 +1,5 @@
 use rocket::{get, response::content::Html, routes, Rocket};
-use turbopump::{
-    fairing::config::SessionConfig, fairing::SessionFairing, store::in_memory::InMemory, Session,
-};
+use turbopump::{fairing::SessionConfig, fairing::SessionFairing, InMemory, Session};
 
 #[derive(Clone, Default)]
 struct HitCounter {

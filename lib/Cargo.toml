@@ -20,7 +20,7 @@ path = "src/lib.rs"
 
 [features]
 default = []
-cookie = ["private"]
+cookies = ["private"]
 database = []
 cache = []
 private = ["rocket/secrets"]
@@ -43,3 +43,4 @@ features = ["secrets"]
 
 [dev-dependencies]
 figment = { version = "0.10", features = ["toml"] }
+cookie = "0.14"

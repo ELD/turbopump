@@ -2,7 +2,7 @@ use rand::{distributions::Alphanumeric, Rng};
 use rocket::http::{Cookie, CookieJar};
 use time::Duration;
 
-use crate::fairing::config::SessionConfig;
+use crate::fairing::SessionConfig;
 
 pub(crate) fn cookie_value_exists(
     cookie_jar: &CookieJar<'_>,
@@ -49,7 +49,10 @@ pub(crate) fn make_cookie<'a, 'c>(
 
 #[cfg(test)]
 mod test {
-    use rocket::http::{private::cookie::Key, Cookie, SameSite};
+    use rocket::{
+        http::{Cookie, SameSite},
+        local::blocking::Client,
+    };
     use time::Duration;
 
     use crate::SessionId;
@@ -66,8 +69,9 @@ mod test {
 
     #[test]
     fn it_checks_if_cookie_exists_and_is_set_to_expected_value() {
-        let key = Key::generate();
-        let cookie_jar = CookieJar::new(&key);
+        let client = Client::tracked(rocket()).unwrap();
+        let response = client.get("/").dispatch();
+        let cookie_jar = response.cookies();
 
         assert!(!cookie_value_exists(&cookie_jar, "session", ""));
         assert!(!cookie_value_exists(&cookie_jar, "unencrypted_cookie", ""));
@@ -108,5 +112,14 @@ mod test {
             .finish();
 
         assert_eq!(expected, make_cookie(&config, name, session_id.as_str()));
+    }
+
+    #[rocket::get("/")]
+    fn empty_route() -> &'static str {
+        ""
+    }
+
+    fn rocket() -> rocket::Rocket {
+        rocket::ignite().mount("/", rocket::routes![empty_route])
     }
 }

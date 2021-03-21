@@ -27,12 +27,21 @@ pub mod in_memory;
 pub trait SessionStore: Send + Sync + 'static {
     type SessionData: Clone + Default + Send + Sync + 'static;
 
+    /// Initializes a new SessionStore
+    ///
+    /// Any necessary setup (i.e. migrating database tables, etc) should happen
+    /// in this method.
     fn init() -> Self
     where
         Self: Sized;
+
     async fn load(&self, session_id: &SessionId) -> Result<Option<Session<Self::SessionData>>>;
+
     async fn store(&self, session: Session<Self::SessionData>) -> Result<()>;
+
     async fn clear(&self) -> Result<()>;
+
     async fn destroy(&self, session_id: &SessionId) -> Result<()>;
+
     async fn tidy(&self) -> Result<()>;
 }

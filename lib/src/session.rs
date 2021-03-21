@@ -59,6 +59,7 @@ impl<Data> Session<Data>
 where
     Data: Clone + Default + Send + Sync + 'static,
 {
+    /// Creates a new session object with the specified lifetime
     pub fn new(lifespan: i64) -> Self {
         let id = util::random_string();
 
@@ -71,32 +72,40 @@ where
         }
     }
 
+    /// Returns the [`SessionId`]
     pub fn id(&self) -> &SessionId {
         &self.id
     }
 
+    /// Returns a tuple containing the string, "session_id" and the Session's
+    /// [`SessionId`]. This is useful for setting cookie values.
     pub fn cookie_value(&self) -> (&str, &SessionId) {
         ("session_id", self.id())
     }
 
+    /// Renews the expiry of the session by the specified lifetime.
     pub fn renew(&mut self, lifespan: i64) {
         self.expiration = Utc::now()
             .checked_add_signed(Duration::seconds(lifespan))
             .unwrap_or_else(Utc::now)
     }
 
+    /// Returns the expiration date time of the session.
     pub fn expiration(&self) -> DateTime<Utc> {
         self.expiration
     }
 
+    /// Returns whether the session is expired or not
     pub fn expired(&self) -> bool {
         self.expiration <= Utc::now()
     }
 
+    /// Checks if the session is still valid, i.e. unexpired.
     pub fn is_valid(&self) -> bool {
         !self.expired()
     }
 
+    /// Checks whether the session is still valid
     pub fn validate(self) -> Option<Self> {
         if self.is_valid() {
             Some(self)
@@ -105,19 +114,40 @@ where
         }
     }
 
+    /// Allows for ergonomically editing the inner data of the session object.
+    ///
+    /// You can also return aribtrary data from the closure passed into the
+    /// this method.
+    ///
+    /// ### Example
+    /// ```
+    /// # use turbopump::Session;
+    /// #[derive(Clone, Default)]
+    /// struct SessionData {
+    ///    hits: usize,
+    /// }
+    ///
+    /// let session = Session::new(3600);
+    /// let hits = session.tap(|data: &mut SessionData| {
+    ///     data.hits += 1;
+    ///     data.hits
+    /// });
+    /// #
+    /// # assert_eq!(1, hits);
+    /// ```
     pub fn tap<T>(&self, f: impl FnOnce(&mut Data) -> T) -> T {
         f(&mut self.inner_data.write().unwrap())
     }
 }
 
 #[async_trait::async_trait]
-impl<'a, 'r, Data> FromRequest<'a, 'r> for &'a Session<Data>
+impl<'r, Data> FromRequest<'r> for &'r Session<Data>
 where
     Data: Clone + Default + Send + Sync + 'static,
 {
     type Error = ();
 
-    async fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         Outcome::Success(request.local_cache(Session::default))
     }
 }

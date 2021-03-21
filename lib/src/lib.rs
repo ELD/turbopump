@@ -2,7 +2,7 @@
 //!
 //! Turbopump is a session middleware for the [Rocket](https://rocket.rs) web
 //! framework. The building blocks of the session middleware are in the
-//! [session] module and can theoretically be extracted for use with other
+//! [`Session`] struct and can theoretically be extracted for use with other
 //! web frameworks.
 //!
 //! Most often, you'll find other libraries consuming this one, rather than
@@ -19,10 +19,10 @@
 //!
 //! Begin using it in your application:
 //! ```rust
-//! use rocket::{error::Error as RocketError, get, response::content::Html, routes};
+//! use rocket::{get, response::content::Html, routes};
 //! use turbopump::{
-//!     fairing::{config::SessionConfig, SessionFairing},
-//!     store::in_memory::InMemory,
+//!     fairing::{SessionConfig, SessionFairing},
+//!     InMemory,
 //!     Session,
 //! };
 //!
@@ -68,12 +68,12 @@
 //! Session duration, cookie settings, and more can be configured separately or
 //! via the `Rocket.toml` file in your Rocket application.
 //!
-//! For more details, check out the [`fairing::config::SessionConfig`] documentation.
+//! For more details, check out the [`fairing::SessionConfig`] documentation.
 
 pub mod fairing;
-pub mod session;
-pub mod store;
-pub mod types;
+mod session;
+mod store;
+mod types;
 mod util;
 
 #[doc(inline)]
