@@ -3,7 +3,7 @@ version: 2.1
 executors:
   rust-exec:
     docker:
-      - image: cimg/rust:1.48.0
+      - image: rustlang/rust:nightly-slim
 
 jobs:
   lint:
@@ -15,7 +15,10 @@ jobs:
     executor: rust-exec
     steps:
       - checkout
-      - run: cargo test
+      - run: cargo install cargo2junit
+      - run: cargo test -- -Z unstable-options --format json | cargo2junit > test-output.xml
+      - store_test_results:
+          path: ./test-output.xml
 
 workflows:
   lint_and_test:

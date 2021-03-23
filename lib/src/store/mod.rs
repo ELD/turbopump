@@ -17,6 +17,11 @@ pub mod in_memory;
 ///
 /// This is an _async_ trait. Implementations must be decorated with `#[rocket::async_trait]`.
 ///
+/// ### Methods
+///
+/// There are six total methods that are required by an implementor of this
+/// trait. They provide the building blocks for any session store.
+///
 /// ### Example
 ///
 /// Suppose you wanted to implement your own in-memory `SessionStore`, this is how it may look:
@@ -35,13 +40,18 @@ pub trait SessionStore: Send + Sync + 'static {
     where
         Self: Sized;
 
+    /// Loads a session from the provided store
     async fn load(&self, session_id: &SessionId) -> Result<Option<Session<Self::SessionData>>>;
 
+    /// Stores the provided session into the store
     async fn store(&self, session: Session<Self::SessionData>) -> Result<()>;
 
+    /// Removes all sessions, regardless of validity, from the session store
     async fn clear(&self) -> Result<()>;
 
+    /// Completly removes the provided session from the store
     async fn destroy(&self, session_id: &SessionId) -> Result<()>;
 
+    /// Removes all expired sessions from the session store
     async fn tidy(&self) -> Result<()>;
 }
