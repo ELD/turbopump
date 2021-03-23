@@ -16,9 +16,10 @@ jobs:
     steps:
       - checkout
       - run: cargo install cargo2junit
-      - run: cargo test -- -Z unstable-options --format json | cargo2junit > test-output.xml
+      - run: mkdir -p ~/test-results/cargo
+      - run: cargo test -- -Z unstable-options --format json | cargo2junit > ~/test-results/cargo/test-output.xml
       - store_test_results:
-          path: ./test-output.xml
+          path: ~/test-results
 
 workflows:
   lint_and_test:
