@@ -52,6 +52,7 @@ mod test {
     use rocket::{
         http::{Cookie, SameSite},
         local::blocking::Client,
+        Build, Rocket,
     };
     use time::Duration;
 
@@ -119,7 +120,7 @@ mod test {
         ""
     }
 
-    fn rocket() -> rocket::Rocket {
-        rocket::ignite().mount("/", rocket::routes![empty_route])
+    fn rocket() -> Rocket<Build> {
+        rocket::build().mount("/", rocket::routes![empty_route])
     }
 }

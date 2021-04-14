@@ -11,7 +11,7 @@ pub struct HitCounter {
 
 #[rocket::main]
 async fn main() -> Result<(), RocketError> {
-    rocket::ignite()
+    rocket::build()
         .attach(SessionFairing::<InMemory<HitCounter>>::with_config(
             SessionConfig::builder().finish(),
         ))

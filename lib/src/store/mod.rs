@@ -25,7 +25,7 @@ pub mod in_memory;
 /// ### Example
 ///
 /// Suppose you wanted to implement your own in-memory `SessionStore`, this is how it may look:
-/// ```rust
+/// ```rust,no_run
 /// todo!()
 /// ```
 #[async_trait]
@@ -49,7 +49,7 @@ pub trait SessionStore: Send + Sync + 'static {
     /// Removes all sessions, regardless of validity, from the session store
     async fn clear(&self) -> Result<()>;
 
-    /// Completly removes the provided session from the store
+    /// Completely removes the provided session from the store
     async fn destroy(&self, session_id: &SessionId) -> Result<()>;
 
     /// Removes all expired sessions from the session store

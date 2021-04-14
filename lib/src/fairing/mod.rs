@@ -23,7 +23,7 @@
 //! #     count: u32,
 //! # }
 //! #
-//! rocket::ignite().attach(SessionFairing::<InMemory<Data>>::init());
+//! rocket::build().attach(SessionFairing::<InMemory<Data>>::init());
 //! ```
 //!
 //! ## Ordering

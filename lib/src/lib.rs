@@ -33,7 +33,7 @@
 //!
 //! #[rocket::launch]
 //! fn rocket() -> _ {
-//!     rocket::ignite()
+//!     rocket::build()
 //!         .attach(SessionFairing::<InMemory<HitCounter>>::with_config(
 //!             SessionConfig::builder().finish(),
 //!         ))

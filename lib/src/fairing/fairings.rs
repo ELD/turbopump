@@ -3,9 +3,9 @@ use std::marker::PhantomData;
 use async_trait::async_trait;
 use rand::Rng;
 use rocket::{
-    fairing::{Fairing, Info, Kind},
+    fairing::{Fairing, Info, Kind, Result},
     http::Cookie,
-    Data, Request, Response, Rocket,
+    Build, Data, Request, Response, Rocket,
 };
 
 use crate::{
@@ -76,16 +76,16 @@ impl<Store: SessionStore> Fairing for SessionFairing<Store> {
     fn info(&self) -> Info {
         Info {
             name: "Turbopump (session management)",
-            kind: Kind::Attach | Kind::Request | Kind::Response,
+            kind: Kind::Ignite | Kind::Request | Kind::Response,
         }
     }
 
-    async fn on_attach(&self, rocket: Rocket) -> Result<Rocket, Rocket> {
+    async fn on_ignite(&self, rocket: Rocket<Build>) -> Result {
         Ok(rocket.manage(Store::init()))
     }
 
     async fn on_request(&self, req: &mut Request<'_>, _: &mut Data) {
-        let store = req.managed_state::<Store>().unwrap();
+        let store = req.rocket().state::<Store>().unwrap();
 
         if rand::thread_rng().gen::<f64>() <= self.config.lottery() {
             store.tidy().await.unwrap();
@@ -99,7 +99,7 @@ impl<Store: SessionStore> Fairing for SessionFairing<Store> {
     }
 
     async fn on_response<'r>(&self, req: &'r Request<'_>, res: &mut Response<'r>) {
-        let store = req.managed_state::<Store>().unwrap();
+        let store = req.rocket().state::<Store>().unwrap();
         let session: &Session<Store::SessionData> = req.local_cache(Session::default);
 
         store.store(session.clone()).await.unwrap();
